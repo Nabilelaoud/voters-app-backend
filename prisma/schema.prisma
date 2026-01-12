@@ -1,0 +1,46 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Poll {
+  id          String   @id @default(cuid())
+  title       String
+  isAnonymous Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  options Option[]
+  votes   Vote[]
+}
+
+model Option {
+  id     String @id @default(cuid())
+  text   String
+
+  pollId String
+  poll   Poll   @relation(fields: [pollId], references: [id], onDelete: Cascade)
+
+  votes Vote[]
+}
+
+model Vote {
+  id          String   @id @default(cuid())
+  pollId      String
+  optionId    String
+  isAnonymous Boolean  @default(false)
+
+  // Null signifie un vote anonyme (aucune information sur le votant)
+  voterHash String?
+
+  createdAt DateTime @default(now())
+
+  poll   Poll   @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  option Option @relation(fields: [optionId], references: [id], onDelete: Cascade)
+
+  // Empêche un utilisateur de voter plusieurs fois pour le même sondage
+  @@unique([pollId, voterHash])
+}
